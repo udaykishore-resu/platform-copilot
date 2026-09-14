@@ -1,11 +1,11 @@
 # platform-copilot
 
-> The [roadmap.sh AI Engineer roadmap](https://roadmap.sh/ai-engineer), built — not summarised. Every one of its 127 nodes becomes a concept card (what it is, the alternatives compared, why it wins and when it doesn't, the problem it solves and the value it adds) **and** a working piece of one product: a knowledge copilot for platform/SRE teams, written in Go, that answers questions about your runbooks with citations, investigates a cluster with read-only tools, and reads your dashboards.
+> The AI Engineer roadmap, built — not summarised. Every one of its 127 concepts becomes a concept card (what it is, the alternatives compared, why it wins and when it doesn't, the problem it solves and the value it adds) **and** a working piece of one product: a knowledge copilot for platform/SRE teams, written in Go, that answers questions about your runbooks with citations, investigates a cluster with read-only tools, and reads your dashboards.
 
 [![ci](https://github.com/udaykishore-resu/platform-copilot/actions/workflows/ci.yml/badge.svg)](https://github.com/udaykishore-resu/platform-copilot/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/Go-1.22%2B-00ADD8?logo=go&logoColor=white)](go.mod)
 [![zero dependencies](https://img.shields.io/badge/go.mod-zero%20deps-2ea44f)](go.mod)
-[![roadmap coverage](https://img.shields.io/badge/roadmap.sh%20AI%20Engineer-127%2F127%20nodes-6f42c1)](modules/ROADMAP-NODES.md)
+[![roadmap coverage](https://img.shields.io/badge/AI%20Engineer%20roadmap-127%2F127%20concepts-6f42c1)](modules/ROADMAP-NODES.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ```
@@ -34,7 +34,7 @@ Swap `COPILOT_PROVIDER=ollama` (local, free), `openai`, `anthropic` or `gemini` 
 
 ## Why this repo exists
 
-Most "AI engineer roadmap" repositories are reading lists. This one takes the opposite bet: **you understand a concept when you have built it, measured it, and decided against its alternatives.** So the roadmap is organised as a course where every module ends with a runnable lab, every lab grows the same product, and every non-obvious choice is written down as an Architecture Decision Record. A hiring manager can read the concept cards to see breadth, run `make run` to see it work, read the ADRs to see judgement, and read `make eval` output to see that "works" is measured.
+Most "AI engineer roadmap" repositories are reading lists. This one is a complete AI Engineer curriculum — from pre-trained models and the OpenAI platform through embeddings, vector databases, RAG, agents, multimodal, safety and tooling — and it takes the opposite bet: **you understand a concept when you have built it, measured it, and decided against its alternatives.** So the roadmap is organised as a course where every module ends with a runnable lab, every lab grows the same product, and every non-obvious choice is written down as an Architecture Decision Record. A hiring manager can read the concept cards to see breadth, run `make run` to see it work, read the ADRs to see judgement, and read `make eval` output to see that "works" is measured.
 
 It is deliberately built by a platform engineer for platform engineers: the capstone's corpus is runbooks, Kubernetes manifests, Terraform and postmortems; its agent tools are `kubectl get/describe/logs` (read-only, allowlisted in code) and PromQL; its safety layer knows that `10.42.3.17` is not PII but `kubectl delete ns` in an answer is a bug.
 
@@ -131,7 +131,7 @@ data/         sample knowledge base (runbooks, manifests, Terraform, postmortem,
 
 ## Relationship to `ai-engineering-mastery`
 
-[`ai-engineering-mastery`](https://github.com/udaykishore-resu/ai-engineering-mastery) is the theory: 15 topics at 26-section depth (internals, history, scaling, Staff-level discussion). This repository is the practice: the public roadmap, node by node, as one shippable system. Read that one to understand *how* a transformer or an HNSW index works; use this one to *build and evaluate* a product on top of them.
+[`ai-engineering-mastery`](https://github.com/udaykishore-resu/ai-engineering-mastery) is the theory: 15 topics at 26-section depth (internals, history, scaling, Staff-level discussion). This repository is the practice: the AI Engineer roadmap, concept by concept, as one shippable system. Read that one to understand *how* a transformer or an HNSW index works; use this one to *build and evaluate* a product on top of them.
 
 ## Skills demonstrated
 
@@ -139,7 +139,7 @@ Go systems design (clean interfaces, zero-dependency HTTP clients, context/timeo
 
 ## GitHub metadata
 
-**Description:** The roadmap.sh AI Engineer roadmap, built: 127 concept cards + a Go platform/SRE knowledge copilot (RAG, agents, multimodal, safety, eval) with zero dependencies.
+**Description:** The AI Engineer roadmap, built: 127 concept cards + a Go platform/SRE knowledge copilot (RAG, agents, multimodal, safety, eval) with zero dependencies.
 
 **Topics:** `ai-engineering` `llm` `rag` `ai-agents` `golang` `embeddings` `vector-database` `qdrant` `openai` `anthropic` `gemini` `ollama` `langchain` `llamaindex` `huggingface` `prompt-engineering` `ai-safety` `kubernetes` `sre` `platform-engineering` `roadmap` `course`
 

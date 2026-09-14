@@ -470,7 +470,7 @@ The module also teaches the economics. Tokens are the billing unit, the latency 
 
 ### Prompt Engineering Roadmap
 
-**What it is.** roadmap.sh maintains a separate Prompt Engineering roadmap covering prompting techniques in depth: zero-shot and few-shot prompting, chain-of-thought and step-by-step reasoning, role prompting, output formatting, self-consistency, tree-of-thought style decomposition, and prompt-injection defences. This course treats prompt engineering as one skill inside the AI engineer's toolbox, exercised in `BuildPrompt` and the agent prompt; the dedicated roadmap is the place to go deeper.
+**What it is.** Prompt engineering is deep enough to be its own roadmap, covering prompting techniques in depth: zero-shot and few-shot prompting, chain-of-thought and step-by-step reasoning, role prompting, output formatting, self-consistency, tree-of-thought style decomposition, and prompt-injection defences. This course treats prompt engineering as one skill inside the AI engineer's toolbox, exercised in `BuildPrompt` and the agent prompt; the dedicated roadmap is the place to go deeper.
 
 **Alternatives compared.**
 
@@ -594,5 +594,4 @@ Expected: the comparison prints a table with provider, model, latency, input and
 - Mistral AI documentation: https://docs.mistral.ai/
 - Cohere Rerank documentation: https://docs.cohere.com/docs/rerank-overview
 - Replicate documentation: https://replicate.com/docs
-- roadmap.sh Prompt Engineering roadmap: https://roadmap.sh/prompt-engineering
 - Liu et al., "Lost in the Middle: How Language Models Use Long Contexts" (2023): https://arxiv.org/abs/2307.03172

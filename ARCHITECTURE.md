@@ -1,6 +1,6 @@
 # Architecture
 
-`platform-copilot` is a knowledge copilot for platform / SRE teams. It ingests runbooks, Kubernetes manifests, Terraform, and incident postmortems, answers questions with citations (RAG), runs tool-using agents that can look at a cluster read-only, and understands dashboard screenshots. Every component maps to a section of the roadmap.sh **AI Engineer** roadmap — the repo is the roadmap, built.
+`platform-copilot` is a knowledge copilot for platform / SRE teams. It ingests runbooks, Kubernetes manifests, Terraform, and incident postmortems, answers questions with citations (RAG), runs tool-using agents that can look at a cluster read-only, and understands dashboard screenshots. Every component maps to a section of the **AI Engineer** roadmap — the repo is the roadmap, built.
 
 ```
                 ┌──────────────────────────────────────────────────────────────┐

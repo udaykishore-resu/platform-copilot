@@ -5,7 +5,7 @@
 
 ## Context
 
-The roadmap.sh AI Engineer roadmap is language-neutral, but its ecosystem is not: the reference
+The AI Engineer roadmap is language-neutral, but its ecosystem is not: the reference
 SDKs, LangChain, LlamaIndex, sentence-transformers, `transformers`, fine-tuning scripts and most
 evaluation tooling are Python-first, and several roadmap nodes (Sentence Transformers, LangChain,
 LlamaIndex, Hugging Face Inference SDK, fine-tuning) are effectively Python library nodes. A course

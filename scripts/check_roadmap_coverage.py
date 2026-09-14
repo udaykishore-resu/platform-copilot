@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail if any roadmap.sh AI Engineer node lacks a concept card.
+"""Fail if any AI Engineer roadmap node lacks a concept card.
 
 Reads modules/ROADMAP-NODES.md (the node → module map) and checks each module
 README for a `### <node>` heading. Used by `make docs-check` and CI.

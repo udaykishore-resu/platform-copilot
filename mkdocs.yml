@@ -1,5 +1,5 @@
 site_name: platform-copilot · AI Engineer roadmap, built
-site_description: The roadmap.sh AI Engineer roadmap implemented as a Go platform/SRE knowledge copilot — one concept card per node, one capstone.
+site_description: The AI Engineer roadmap implemented as a Go platform/SRE knowledge copilot — one concept card per node, one capstone.
 site_url: https://udaykishore-resu.github.io/platform-copilot/
 repo_url: https://github.com/udaykishore-resu/platform-copilot
 repo_name: udaykishore-resu/platform-copilot

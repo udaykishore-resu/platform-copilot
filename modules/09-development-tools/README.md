@@ -123,7 +123,7 @@ The module closes with the two learning tracks the roadmap points at next. Both 
 
 | Option | Strengths | Weaknesses | Choose it when |
 |---|---|---|---|
-| Follow the roadmap.sh AI & Data Scientist track | Structured; free; complements this course directly | Long; much of it is not needed for application work | You want to own evaluation and fine-tuning decisions |
+| Follow an AI & Data Scientist track | Structured; free; complements this course directly | Long; much of it is not needed for application work | You want to own evaluation and fine-tuning decisions |
 | Targeted study: statistics for A/B tests, evaluation metrics, information retrieval | Fast payoff for an AI engineer | Leaves gaps in ML fundamentals | You need to make eval conclusions rigorous now |
 | Stay application-focused; rely on data scientists for rigour | Immediate productivity | Misread eval results; ship regressions | Only with a data scientist on the team |
 
@@ -141,7 +141,7 @@ The module closes with the two learning tracks the roadmap points at next. Both 
 
 | Option | Strengths | Weaknesses | Choose it when |
 |---|---|---|---|
-| Follow the roadmap.sh Prompt Engineering track | Systematic coverage of techniques; free | Techniques age quickly as models improve | You write or review prompts regularly |
+| Follow a Prompt Engineering track | Systematic coverage of techniques; free | Techniques age quickly as models improve | You write or review prompts regularly |
 | Provider prompt guides (OpenAI, Anthropic, Google) | Model-specific and current | Vendor scope | Always, for the model you use |
 | Learn by eval: change prompts, measure with the harness | Grounded in your own system | Slow without a framework of techniques to try | Combined with either of the above |
 
@@ -232,9 +232,6 @@ Pick one agentic tool and give it a bounded task with an objective check, for ex
 
 ## References
 
-- roadmap.sh, *AI Engineer* roadmap (Development Tools section and "Continue learning"). https://roadmap.sh/ai-engineer
-- roadmap.sh, *AI and Data Scientist* roadmap. https://roadmap.sh/ai-data-scientist
-- roadmap.sh, *Prompt Engineering* roadmap. https://roadmap.sh/prompt-engineering
 - Cursor, *Rules for AI* documentation. https://docs.cursor.com/context/rules
 - Windsurf, documentation. https://docs.windsurf.com/
 - Zed, *AI* documentation. https://zed.dev/docs/ai/overview

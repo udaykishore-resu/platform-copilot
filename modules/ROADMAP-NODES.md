@@ -1,4 +1,4 @@
-# roadmap.sh · AI Engineer — node → module map
+# AI Engineer roadmap — node → module map
 
 Every node on the official roadmap is listed once. A module is complete only when every node assigned to it has a concept card.
 

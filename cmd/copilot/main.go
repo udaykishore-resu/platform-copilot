@@ -1,5 +1,5 @@
 // Command copilot is the platform/SRE knowledge copilot CLI. Each subcommand
-// corresponds to a stage of the roadmap.sh AI Engineer roadmap; run with no
+// corresponds to a stage of the AI Engineer roadmap; run with no
 // arguments for the list.
 package main
 
@@ -31,7 +31,7 @@ import (
 
 var version = "dev"
 
-const usage = `platform-copilot — an AI copilot for platform & SRE teams, built along the roadmap.sh AI Engineer roadmap.
+const usage = `platform-copilot — an AI copilot for platform & SRE teams, built along the AI Engineer roadmap.
 
 Usage: copilot <command> [flags]
 

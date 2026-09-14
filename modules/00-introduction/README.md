@@ -10,7 +10,7 @@
 
 A platform engineer who has spent a decade on Kubernetes, Terraform and on-call rotations already knows what a knowledge problem looks like: the runbook that is two releases stale, the postmortem nobody re-reads, the PromQL query that lives in one person's shell history. What that engineer typically cannot do yet is reason about a system where one of the components is a probabilistic text model. The vocabulary is unfamiliar (tokens, embeddings, context window, temperature), the failure modes are unfamiliar (a confident wrong answer instead of a stack trace), and the cost model is unfamiliar (you are billed per token, not per CPU-second). This module builds the vocabulary and the mental model so that the following nine modules read as engineering, not magic.
 
-The capstone, `platform-copilot`, is the running example throughout the course. It ingests runbooks, Kubernetes manifests, Terraform modules and incident postmortems; answers questions with citations (retrieval-augmented generation); runs a tool-using agent that can inspect a cluster read-only through `kubectl get` and PromQL; and reads dashboard screenshots. Every node on the roadmap.sh AI Engineer roadmap maps to a package in this repository. After this module you will have run the whole pipeline once with a deterministic mock model, so that when Module 01 introduces real providers you already know exactly which interface they plug into.
+The capstone, `platform-copilot`, is the running example throughout the course. It ingests runbooks, Kubernetes manifests, Terraform modules and incident postmortems; answers questions with citations (retrieval-augmented generation); runs a tool-using agent that can inspect a cluster read-only through `kubectl get` and PromQL; and reads dashboard screenshots. Every node on the AI Engineer roadmap maps to a package in this repository. After this module you will have run the whole pipeline once with a deterministic mock model, so that when Module 01 introduces real providers you already know exactly which interface they plug into.
 
 The module also sets the standard of judgment the rest of the course holds itself to. Each concept card compares the thing being taught with its real alternatives and names the conditions under which the alternative is the better choice. An AI engineer who cannot say "we should not use an LLM here" is not yet an engineer.
 
@@ -401,7 +401,6 @@ Note that changing `COPILOT_EMBED_PROVIDER` requires re-ingesting: vectors from 
 
 ## References
 
-- roadmap.sh, AI Engineer roadmap: https://roadmap.sh/ai-engineer
 - Vaswani et al., "Attention Is All You Need" (2017): https://arxiv.org/abs/1706.03762
 - Ouyang et al., "Training language models to follow instructions with human feedback" (2022): https://arxiv.org/abs/2203.02155
 - Lewis et al., "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks" (2020): https://arxiv.org/abs/2005.11401

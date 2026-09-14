@@ -1,6 +1,6 @@
 # Module NN · <Roadmap section name>
 
-> **Roadmap nodes covered:** <comma-separated list of every roadmap.sh node this module covers — nothing may be skipped>
+> **Roadmap nodes covered:** <comma-separated list of every roadmap node this module covers — nothing may be skipped>
 >
 > **Capstone step:** <what this module adds to `platform-copilot`, with the exact Go packages / commands touched>
 >
