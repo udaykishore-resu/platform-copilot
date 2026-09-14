@@ -14,6 +14,54 @@ The capstone, `platform-copilot`, is the running example throughout the course. 
 
 The module also sets the standard of judgment the rest of the course holds itself to. Each concept card compares the thing being taught with its real alternatives and names the conditions under which the alternative is the better choice. An AI engineer who cannot say "we should not use an LLM here" is not yet an engineer.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart TD
+  U(["Engineer on call<br/>copilot ask · copilot agent"])
+  subgraph APP["Application layer · what this repo builds"]
+    direction LR
+    GRD["Guards<br/>internal/safety"]
+    RET["Retrieval<br/>internal/embeddings + internal/vectorstore"]
+    PRM["Prompting<br/>internal/rag BuildPrompt"]
+    TOOL["Tools<br/>internal/agent · read-only kubectl · promql"]
+    EV["Eval<br/>hit@k · answer accuracy"]
+  end
+  subgraph MOD["Model layer · someone else trained these"]
+    direction LR
+    HOST["Hosted APIs<br/>OpenAI · Anthropic · Gemini"]
+    LOC["Local weights<br/>Ollama · mock"]
+  end
+  subgraph INF["Infrastructure layer"]
+    direction LR
+    GPU["GPUs · serving · autoscaling"]
+    OBS["Cost · latency · audit log"]
+  end
+  ML["An ML engineer owns these two instead<br/>data · labels · training loops · weights"]
+  ANS(["Answer with [n] citations<br/>tokens · cost · latency"])
+  U -->|"question"| APP
+  GRD --> RET --> PRM --> TOOL --> EV
+  APP -->|"prompt + tools + token budget"| MOD
+  MOD -->|"completion + usage"| APP
+  MOD -->|"runs on"| INF
+  APP -->|"measured, cited"| ANS
+  ML -.->|"produces the model"| MOD
+  ML -.->|"owns the training fleet"| INF
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class U entry
+  class GRD safety
+  class RET,PRM,TOOL,EV core
+  class HOST,LOC model
+  class GPU,OBS,ML ext
+  class ANS out
+```
+
+*The layers an AI engineer works at, and the two an ML engineer owns instead.*
+
 ## Concept cards
 
 ### What is an AI Engineer?

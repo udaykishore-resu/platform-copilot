@@ -14,6 +14,62 @@ Safety in an LLM product is not a feature; it is a layer, and it has to sit in t
 
 The ethics half is not separable from the engineering. An SRE copilot that is confidently wrong in a way that correlates with which team wrote the runbook, or that happily exposes customer identifiers from a Terraform state file, is a fairness and privacy failure with a technical root cause. This module gives a working engineer the vocabulary to name those failures in a design review and the code to make them measurably rarer — with an adversarial test suite that turns "we thought about safety" into a number in CI.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart TD
+  REQ(["POST /v1/ask · copilot agent<br/>end-user ID + request ID"])
+  subgraph IN["Before the model — input guard"]
+    direction TB
+    LIM["contain · 8k-char cap + AllowedTopics<br/>64 KiB body cap at the HTTP edge"]
+    INJ["detect · safety.DetectInjection<br/>ignore-previous · prompt-exfil heuristics"]
+    RED["contain · RedactPII + RedactSecrets"]
+    MODI["detect · Moderator.Moderate<br/>openai · llama-guard · local"]
+  end
+  BOUND["contain · safety.WrapUntrusted<br/>retrieved chunks and tool output marked as data"]
+  LLM["llm.Provider<br/>Request.User = end-user ID"]
+  subgraph OUT["After the model — output guard"]
+    direction TB
+    MODO["detect · Moderator on the answer<br/>optional second pass"]
+    BAN["contain · BannedOutput<br/>destructive commands withheld"]
+    SCH["contain · ValidateJSON + output redaction"]
+  end
+  BLOCK(["fail closed<br/>neutral message + request ID"])
+  ANS(["answer with provenance<br/>sources · model · cost"])
+  AUDIT[("audit log<br/>end-user ID · request ID · status · duration<br/>never the question or the answer")]
+  REQ --> LIM
+  LIM -->|"within limits"| INJ
+  LIM -->|"oversized or off-topic"| BLOCK
+  INJ -->|"suspicious"| BLOCK
+  INJ -->|"clean text"| RED
+  RED -->|"redacted question"| MODI
+  MODI -->|"flagged"| BLOCK
+  MODI -->|"allowed"| BOUND
+  BOUND -->|"prompt"| LLM
+  LLM -->|"draft answer"| MODO
+  MODO -->|"flagged"| BLOCK
+  MODO --> BAN
+  BAN --> SCH
+  SCH -->|"checked text"| ANS
+  INJ -.->|"score"| AUDIT
+  LLM -.->|"tokens and cost"| AUDIT
+  BLOCK -.->|"reason, never shown to the user"| AUDIT
+  SCH -.->|"warnings"| AUDIT
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class REQ entry
+  class BOUND core
+  class LLM model
+  class LIM,INJ,RED,MODI,MODO,BAN,SCH,BLOCK safety
+  class AUDIT ext
+  class ANS out
+```
+
+*Detectors say something looks wrong; containment makes it harmless whether or not a detector fired.*
+
 ## Concept cards
 
 ### Prompt Injection Attacks

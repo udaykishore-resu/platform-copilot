@@ -14,6 +14,51 @@ This module builds the provider abstraction that the rest of the capstone depend
 
 The module also teaches the economics. Tokens are the billing unit, the latency unit and the capacity unit at once. Counting them correctly, budgeting a prompt against a context window, and understanding why output tokens cost several times more than input tokens are what separate a demo from something a platform team can run for a year without a surprise invoice.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  REQ(["copilot ask · copilot chat<br/>messages + tools + end-user ID"])
+  CW[("Context window<br/>order of 128k tokens")]
+  BUD["internal/tokens<br/>Budget.FitContext · TrimHistory<br/>MaxTokens caps the reply"]
+  P["internal/llm.Provider<br/>one interface, five adapters"]
+  OA["openai.go<br/>POST /v1/chat/completions"]
+  AN["anthropic.go<br/>POST /v1/messages"]
+  GE["gemini.go<br/>POST models generateContent"]
+  OL["ollama.go<br/>POST /api/chat"]
+  MK["mock.go<br/>deterministic, no key"]
+  RES["llm.Response<br/>text · ToolCall · finish_reason"]
+  USE[("Usage<br/>prompt + completion tokens")]
+  COST(["tokens.Price → Cost<br/>dollars per answer"])
+  REQ -->|"messages + tools + MaxTokens"| BUD
+  CW -.->|"hard budget the prompt must fit"| BUD
+  BUD -->|"a prompt that fits"| P
+  P -->|"vendor wire format"| OA
+  P -->|"vendor wire format"| AN
+  P -->|"vendor wire format"| GE
+  P -->|"local wire format"| OL
+  P -->|"offline default"| MK
+  OA --> RES
+  AN --> RES
+  GE --> RES
+  OL --> RES
+  MK --> RES
+  RES -->|"token counts"| USE
+  USE -->|"per-model price table"| COST
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class REQ entry
+  class BUD,P core
+  class OA,AN,GE,OL,MK model
+  class CW,USE data
+  class RES core
+  class COST out
+```
+
+*One request, one interface, four wire formats — and a bill on the way back.*
+
 ## Concept cards
 
 ### Using Pre-trained Models

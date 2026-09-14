@@ -14,6 +14,47 @@ This module builds that answer. Open-weights models from Meta, Mistral, Alibaba,
 
 The module is also about honesty. Open models are not free: someone pays for the GPU, the upgrades and the quality gap to the frontier. The concept cards compare each choice against its hosted alternative and the lab measures the difference on the same questions, so the recommendation to a CTO is a number, not a preference.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  DEC{"May the runbooks and<br/>postmortems leave the building?"}
+  CLOSED["Closed weights, hosted<br/>OpenAI · Anthropic · Gemini"]
+  HF["Hugging Face Hub<br/>model card · licence · eval results"]
+  HFI["Inference SDK<br/>their GPU, your API call"]
+  HFL["transformers, in-process<br/>weights on your hardware"]
+  PULL["ollama pull llama3.2<br/>ollama pull nomic-embed-text"]
+  OCHAT["/api/chat"]
+  OEMB["/api/embed"]
+  PROV["internal/llm.Provider<br/>ollama.go"]
+  EMBD["internal/embeddings.Embedder<br/>ollama.go"]
+  SAME(["Same ingest · search · ask · agent<br/>two env vars, no pipeline change"])
+  DEC -->|"yes · default"| CLOSED
+  DEC -->|"no · open weights"| HF
+  DEC -->|"no · open weights"| PULL
+  HF -->|"API call, nothing downloaded"| HFI
+  HF -->|"weights on your hardware"| HFL
+  PULL -->|"weights on your hardware"| OCHAT
+  PULL -->|"weights on your hardware"| OEMB
+  OCHAT -->|"chat completion"| PROV
+  OEMB -->|"vectors"| EMBD
+  HFL -.->|"same contract, Python labs"| PROV
+  CLOSED -->|"same contract"| PROV
+  PROV --> SAME
+  EMBD --> SAME
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class DEC entry
+  class CLOSED,HFI,HFL,OCHAT,OEMB model
+  class HF,PULL ext
+  class PROV,EMBD core
+  class SAME out
+```
+
+*Open or closed is one decision; both open paths land on the same two interfaces.*
+
 ## Concept cards
 
 ### Open vs Closed Source Models

@@ -12,6 +12,56 @@ Modules 03 and 04 gave the copilot a way to find the right paragraph. This modul
 
 The module is also where the engineering judgment lives, because a RAG pipeline has five stages and each one has a failure mode that looks like "the model is dumb" and is not. A chunk that straddles two runbook branches retrieves well and answers wrong. A threshold set too low hands the model junk and it invents. A prompt that does not number its passages cannot be cited. A context window exceeded by two tokens returns an API error instead of an answer. The Go code fixes each of these in a specific file, and the three Python labs build the same pipeline with the raw SDK, LangChain and LlamaIndex so you can see exactly what a framework hides and what it does not. The fourth lab hands the whole pipeline to OpenAI's hosted file search, so the trade between control and convenience is something you have run, not read about.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  subgraph ING["Ingest — once per document"]
+    direction LR
+    DOCS[("data/corpus<br/>runbooks · manifests · postmortems")]
+    WALK["rag.Ingester.Ingest<br/>walk the tree, skip unchanged hashes"]
+    CHUNK["rag.Chunker.Markdown<br/>heading path prepended"]
+    EMB1["embeddings.Embedder"]
+  end
+  subgraph QRY["Query — once per question"]
+    direction LR
+    Q(["copilot ask<br/>'why is the payments pod CrashLooping?'"])
+    EMB2["embeddings.Embedder<br/>same model, same dimension"]
+    RET["rag.Retriever<br/>dense + BM25 fused by RRF"]
+    THR{"score ≥ MinScore?"}
+    BP["rag.BuildPrompt<br/>numbered passages · tokens.Budget.FitContext"]
+    LLM["llm.Provider<br/>temperature 0, answer only from context"]
+  end
+  IDX[("vectorstore.Store<br/>vectors · metadata · BM25 index")]
+  ANS(["answer with [n] citations<br/>sources · tokens · cost"])
+  ABST(["'the knowledge base does not cover this'"])
+  DOCS -->|"files"| WALK
+  WALK -->|"sections"| CHUNK
+  CHUNK -->|"chunk text"| EMB1
+  EMB1 -->|"upsert by content hash"| IDX
+  Q -->|"question"| EMB2
+  EMB2 -->|"query vector"| IDX
+  IDX -->|"top-k hits with scores"| RET
+  RET --> THR
+  THR -->|"nothing clears it"| ABST
+  THR -->|"kept passages"| BP
+  BP -->|"prompt within the window"| LLM
+  LLM -->|"grounded text"| ANS
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class Q entry
+  class WALK,CHUNK,RET,BP core
+  class DOCS,IDX data
+  class EMB1,EMB2,LLM model
+  class THR safety
+  class ANS,ABST out
+```
+
+*The index is the only thing the two phases share — everything upstream of it is decided once, everything downstream of it is decided per question.*
+
 ## Concept cards
 
 ### RAG Usecases

@@ -2,35 +2,53 @@
 
 `platform-copilot` is a knowledge copilot for platform / SRE teams. It ingests runbooks, Kubernetes manifests, Terraform, and incident postmortems, answers questions with citations (RAG), runs tool-using agents that can look at a cluster read-only, and understands dashboard screenshots. Every component maps to a section of the **AI Engineer** roadmap — the repo is the roadmap, built.
 
-```
-                ┌──────────────────────────────────────────────────────────────┐
-                │                         cmd/copilot                          │
-                │   ingest · ask · search · agent · chat · serve · vision ·    │
-                │   embed · tokens · moderate · models                         │
-                └───────────────┬──────────────────────────┬───────────────────┘
-                                │                          │
-              ┌─────────────────▼──────────┐   ┌───────────▼──────────────────┐
-              │        internal/rag        │   │        internal/agent        │
-              │ chunk → embed → upsert     │   │ ReAct loop · native tools    │
-              │ retrieve → assemble → gen  │   │ tools: search_docs, kubectl  │
-              └───────┬───────────┬────────┘   │ (read-only), promql, calc    │
-                      │           │            └───────────┬──────────────────┘
-         ┌────────────▼───┐  ┌────▼──────────────┐         │
-         │ internal/      │  │ internal/         │         │
-         │ embeddings     │  │ vectorstore       │         │
-         │ openai·ollama· │  │ memory·qdrant·    │         │
-         │ mock           │  │ chroma · bm25/rrf │         │
-         └────────────────┘  └───────────────────┘         │
-                                                           │
-   ┌───────────────────────────────────────────────────────▼───────────────────┐
-   │                               internal/llm                                │
-   │    Provider interface  →  openai · anthropic · gemini · ollama · mock      │
-   └───────────────────────────────────────────────────────────────────────────┘
-   ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ ┌────────────┐
-   │ internal/safety  │ │ internal/tokens  │ │internal/multimodal│ │ internal/  │
-   │ injection · PII  │ │ count · budget   │ │ vision · whisper  │ │ server     │
-   │ moderation·guard │ │ pricing          │ │ images · tts      │ │ HTTP API   │
-   └──────────────────┘ └──────────────────┘ └──────────────────┘ └────────────┘
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart TD
+  CLI["cmd/copilot<br/>ingest · search · ask · chat · agent · vision<br/>transcribe · speak · diagram · models · tokens · embed · moderate · eval · serve"]
+  SRV["internal/server<br/>POST /v1/ask · POST /v1/agent · /healthz<br/>end-user IDs · request IDs · audit log"]
+  RAG["internal/rag<br/>chunk → embed → upsert<br/>retrieve → assemble → generate"]
+  AG["internal/agent<br/>ReAct loop · native tool calling<br/>search_docs · kubectl (read-only) · promql · calc"]
+  EMB["internal/embeddings<br/>openai · ollama · cohere · mock"]
+  VST[("internal/vectorstore<br/>memory · qdrant · chroma<br/>BM25 + RRF")]
+  LLM["internal/llm<br/>Provider → openai · anthropic · gemini · ollama · mock"]
+  SAF["internal/safety<br/>injection · PII<br/>moderation · guard"]
+  TOK["internal/tokens<br/>estimate · budget<br/>pricing"]
+  MM["internal/multimodal<br/>vision · whisper<br/>images · tts · video"]
+  EVAL["internal/rag/eval<br/>hit@k · MRR<br/>answer + abstention accuracy"]
+  CFG["internal/config<br/>env → Config<br/>mock is the zero-key default"]
+
+  CLI --> RAG
+  CLI --> AG
+  CLI --> MM
+  CLI --> SRV
+  CLI --> EVAL
+  SRV --> RAG
+  SRV --> AG
+  RAG --> EMB
+  RAG --> VST
+  RAG --> LLM
+  AG --> LLM
+  AG -->|"search_docs"| RAG
+  MM --> LLM
+  EVAL --> RAG
+  SAF -.->|"guards every request and response"| RAG
+  SAF -.-> AG
+  TOK -.->|"fits the prompt to the window"| RAG
+  CFG -.->|"wires every component"| CLI
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class CLI,SRV entry
+  class RAG,AG,EVAL core
+  class EMB,LLM,MM model
+  class VST data
+  class SAF safety
+  class TOK,CFG ext
 ```
 
 ## Package contract
@@ -54,6 +72,35 @@
 | `adr/` | Architecture Decision Records for the big forks | `ADR-000x-*.md` | all |
 
 ## Request flow — `copilot ask "why is the payments pod CrashLooping?"`
+
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+sequenceDiagram
+  autonumber
+  participant U as Engineer
+  participant C as cmd/copilot
+  participant S as safety.Guard
+  participant E as embeddings.Embedder
+  participant V as vectorstore.Store
+  participant T as tokens.Budget
+  participant L as llm.Provider
+  U->>C: copilot ask "why is payments-api crashlooping?"
+  C->>S: CheckInput(question)
+  S-->>C: redacted question (or blocked)
+  C->>E: Embed(question)
+  E-->>C: query vector
+  C->>V: Search(vector, k, filter)
+  V-->>C: top-k chunks (+ BM25 fused by RRF)
+  C->>T: fit system + context + history to the window
+  T-->>C: kept chunks, trimmed history
+  C->>L: Complete(messages, user=end-user ID)
+  L-->>C: answer + usage
+  C->>S: CheckOutput(answer)
+  S-->>C: redacted answer (or withheld)
+  C-->>U: answer with [n] citations, tokens, cost, latency
+```
+
+The same flow in words, with what each step actually calls:
 
 1. `safety.DetectInjection` + `safety.RedactPII` screen the question.
 2. `embeddings.Embedder.Embed` turns the question into a vector (mock: hashed bag-of-words; real: `text-embedding-3-small`, `nomic-embed-text`, …).

@@ -14,6 +14,50 @@ Multimodality is also where provider differences are sharpest. Text chat APIs ha
 
 The module is deliberately scoped to *understanding* first. Image generation and TTS are included because the roadmap lists them and because a copilot that can draw a diagram or read an alert aloud is useful, but the value for an SRE team is overwhelmingly on the input side: seeing and hearing what the humans see and hear.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  IMG[("screenshot<br/>png · jpg")]
+  VID[("recording<br/>mp4")]
+  AUD[("incident bridge<br/>m4a · wav")]
+  CMD(["copilot vision · transcribe"])
+  LOAD["multimodal.LoadImage<br/>MIME detect → llm.ImagePart"]
+  FRAMES["multimodal.SampleFrames<br/>ffmpeg, one frame every 5s"]
+  VIS["vision model<br/>gpt-4o · claude · gemini · llava"]
+  ASR["Whisper<br/>OpenAIAudio.Transcribe"]
+  READ(["DashboardReading JSON<br/>panels · anomalies · next_checks"])
+  TEXT(["description + transcript<br/>text for rag and agent"])
+  GCMD(["copilot diagram · speak · vision --generate"])
+  GEN["text model · OpenAI TTS · DALL·E 3"]
+  GOUT(["Mermaid source · mp3 · png"])
+  CMD --> IMG
+  CMD --> VID
+  CMD --> AUD
+  IMG -->|"bytes"| LOAD
+  VID -->|"sampled frames"| FRAMES
+  VID -->|"audio track"| ASR
+  FRAMES -->|"image parts"| LOAD
+  LOAD -->|"llm.Message with Images"| VIS
+  AUD -->|"multipart upload"| ASR
+  VIS -->|"--json, schema-validated"| READ
+  VIS -->|"prose"| TEXT
+  ASR -->|"segments"| TEXT
+  GCMD -->|"prompt"| GEN
+  GEN -->|"rendered artifact"| GOUT
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class CMD,GCMD entry
+  class LOAD,FRAMES core
+  class IMG,VID,AUD data
+  class VIS,ASR,GEN model
+  class READ,TEXT,GOUT out
+```
+
+*Every modality is funnelled into something the provider interface already carries; generation runs the same path backwards.*
+
 ## Concept cards
 
 ### Multimodal AI Usecases

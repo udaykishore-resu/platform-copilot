@@ -14,6 +14,42 @@ Embeddings cross it. An embedding model maps a piece of text to a vector such th
 
 The module deliberately stops before the database. Everything here runs with a numpy matrix and a dot product, because you should see how far that gets you (a long way) before Module 04 asks you to add infrastructure.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  T(["Text<br/>'OOMKilled' · a runbook heading · a log line"])
+  E["embeddings.Embedder<br/>openai · ollama · hashed mock"]
+  V[("Vector<br/>hundreds of floats")]
+  N["Normalise to unit length<br/>so cosine equals a dot product"]
+  SP[("Vector space<br/>near means similar meaning")]
+  COS["embeddings.Cosine<br/>one dot product per comparison"]
+  S1(["Semantic search<br/>top-k nearest chunks"])
+  S2(["Classification<br/>nearest labelled example wins"])
+  S3(["Recommendation<br/>neighbours of what you just read"])
+  S4(["Anomaly detection<br/>distance to the centroid over threshold"])
+  T -->|"one API or local call"| E
+  E -->|"floats"| V
+  V --> N
+  N -->|"unit vectors"| SP
+  SP -->|"every question is the same operation"| COS
+  COS -->|"rank by score"| S1
+  COS -->|"compare to class centroids"| S2
+  COS -->|"neighbours of an item vector"| S3
+  COS -->|"distance to the normal centroid"| S4
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class T entry
+  class E model
+  class V,SP data
+  class N,COS core
+  class S1,S2,S3,S4 out
+```
+
+*Text becomes a vector once; four different products fall out of one cosine.*
+
 ## Concept cards
 
 ### What are Embeddings

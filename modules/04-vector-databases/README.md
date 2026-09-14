@@ -12,6 +12,50 @@ Module 03 ended with a numpy matrix and a dot product, and that was not a toy: f
 
 A vector database is the component that answers all three with one interface: approximate nearest-neighbour indexes (HNSW, IVF) that trade a little recall for sub-linear query time, metadata filtering that runs inside the index rather than after it, and a server that several clients share. The market has a dozen credible options that differ in deployment model (embedded library, self-hosted server, managed service), in which index they build, in whether they do hybrid lexical search, and in whether a Go client exists. After this module you can name the number that decides the choice for your corpus (recall@k at a latency budget, with your filters), run the comparison in an afternoon, and swap the copilot's store with an environment variable because the `Store` interface was designed for it.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  subgraph ING["Ingest · copilot ingest"]
+    direction LR
+    CH[("Chunks<br/>rag.Ingester.Ingest")]
+    EM["embeddings.Embedder"]
+    VEC[("Vectors + metadata payload")]
+    IDX["Index build<br/>HNSW graph layers · M · efConstruction"]
+  end
+  Q(["copilot search · copilot ask"])
+  QV[("Query vector")]
+  ANN["ANN traversal<br/>top layer down, ef candidates explored"]
+  CAND[("Candidate set<br/>more than k, approximate")]
+  FIL["Metadata filter<br/>in-graph in Qdrant, post-filter in pgvector"]
+  TOPK(["Top-k hits with scores"])
+  EXACT["Exact brute force<br/>vectorstore memory.go, scans every vector"]
+  CH -->|"text"| EM
+  EM -->|"floats"| VEC
+  VEC -->|"insert, linked to M neighbours"| IDX
+  Q -->|"question"| QV
+  IDX -->|"the graph to walk"| ANN
+  QV --> ANN
+  ANN -->|"nearest so far"| CAND
+  CAND -->|"owner, updated_after"| FIL
+  FIL -->|"k survivors"| TOPK
+  VEC -.->|"baseline: recall 1.0, latency grows with N"| EXACT
+  EXACT -.->|"the recall the index is measured against"| TOPK
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class Q entry
+  class CH,VEC,QV,CAND data
+  class EM model
+  class IDX,ANN,FIL core
+  class EXACT ext
+  class TOPK out
+```
+
+*How a vector search resolves: build a graph once, walk it per query, and measure it against exact search.*
+
 ## Concept cards
 
 ### Vector Databases

@@ -6,6 +6,40 @@ This repository is a course and a product at once, so contributions fall into tw
 
 Every roadmap node has exactly one `### <Node name>` card in its module README, with the five parts from [`modules/TEMPLATE.md`](modules/TEMPLATE.md): *What it is* · *Alternatives compared* (table) · *Why it wins (and when it doesn't)* · *Problem it solves → value added* · *In the capstone*. Keep numbers durable (relative pricing, "order of 128k tokens") and cite primary sources. `make docs-check` verifies that every node in [`modules/ROADMAP-NODES.md`](modules/ROADMAP-NODES.md) still has a card; `mkdocs build --strict` verifies links.
 
+## Diagram style
+
+Every diagram in this repository is a Mermaid block styled to one Material Design palette, so the course reads as one visual system on GitHub, in the MkDocs Material site, and in both light and dark themes. Node fills are opaque Material 50-tones with 900-tone text and 500-tone strokes, which stay legible whatever background the renderer paints behind them.
+
+Start every diagram with this directive, unchanged, on one line:
+
+```
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+```
+
+Then classify every node with one of these seven roles — the role carries the meaning, so the same colour always means the same kind of thing:
+
+| Role | Material colour | Used for |
+|---|---|---|
+| `entry` | Indigo | what the user touches: CLI commands, HTTP endpoints, questions |
+| `core` | Teal | this repo's own packages and pipeline stages |
+| `data` | Blue | documents, chunks, vectors, indexes, corpora |
+| `model` | Purple | models and inference: LLMs, embedders, vision, ASR |
+| `safety` | Deep Orange | guards, redaction, moderation, allowlists, failures |
+| `ext` | Blue Grey | third parties and infrastructure: vendors, Qdrant, Kubernetes, CI |
+| `out` | Green | results: answers, citations, metrics, artifacts |
+
+```
+classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+```
+
+Conventions that keep the set coherent: one diagram per module, placed directly under "Why this module exists", showing that module's mechanism rather than its table of contents; `flowchart LR` for pipelines and `flowchart TD` for layered structures; `sequenceDiagram` only when the order of messages between parties is the point; edge labels name what flows along the edge, not what the next box does; and no diagram is required to repeat what a sentence already says — delete one rather than pad it.
+
 ## Changing the capstone
 
 Go code lives under `internal/` with the package contract in [`ARCHITECTURE.md`](ARCHITECTURE.md). Rules that keep the repo honest:

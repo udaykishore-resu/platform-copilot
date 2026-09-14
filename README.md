@@ -56,36 +56,88 @@ It is deliberately built by a platform engineer for platform engineers: the caps
 Every module follows the same [template](modules/TEMPLATE.md); [`modules/ROADMAP-NODES.md`](modules/ROADMAP-NODES.md) maps all 127 nodes and `make docs-check` fails CI if any node loses its card.
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
 flowchart LR
-  M00[00 Intro] --> M01[01 Pre-trained models<br/>OpenAI platform] --> M02[02 Open-source AI]
-  M02 --> M03[03 Embeddings] --> M04[04 Vector DBs] --> M05[05 RAG]
-  M05 --> M06[06 Agents] --> M07[07 Multimodal] --> M08[08 Safety] --> M09[09 Dev tools]
-  M03 -. internal/embeddings .-> C((platform-copilot))
-  M04 -. internal/vectorstore .-> C
-  M05 -. internal/rag .-> C
-  M06 -. internal/agent .-> C
-  M07 -. internal/multimodal .-> C
-  M08 -. internal/safety .-> C
+  subgraph FOUND[Foundations]
+    direction LR
+    M00["00 · Introduction"] --> M01["01 · Pre-trained models<br/>OpenAI platform"] --> M02["02 · Open-source AI"]
+  end
+  subgraph KNOW[Knowledge]
+    direction LR
+    M03["03 · Embeddings"] --> M04["04 · Vector databases"] --> M05["05 · RAG"]
+  end
+  subgraph ACT[Action and operations]
+    direction LR
+    M06["06 · Agents"] --> M07["07 · Multimodal"] --> M08["08 · Safety"] --> M09["09 · Dev tools"]
+  end
+  M02 --> M03
+  M05 --> M06
+  M03 -. "internal/embeddings" .-> CAP
+  M04 -. "internal/vectorstore" .-> CAP
+  M05 -. "internal/rag" .-> CAP
+  M06 -. "internal/agent" .-> CAP
+  M07 -. "internal/multimodal" .-> CAP
+  M08 -. "internal/safety" .-> CAP
+  CAP(["platform-copilot<br/>one shippable capstone"])
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class M00,M01,M02 entry
+  class M03,M04,M05 data
+  class M06,M07 core
+  class M08 safety
+  class M09 ext
+  class CAP out
 ```
 
 ## The capstone
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  Q(["copilot ask<br/>'why is payments-api crashlooping?'"]) --> G1
+  subgraph BEFORE[Before the model]
+    direction TB
+    G1["safety.Guard<br/>injection · PII/secret redaction · size limits"]
+  end
+  G1 --> EMB["embeddings.Embedder<br/>openai · ollama · cohere · mock"]
+  EMB --> VS[("vectorstore.Store<br/>memory · qdrant · chroma")]
+  VS --> RRF["BM25 + RRF<br/>dense for paraphrase, sparse for 'PLAT-1901'"]
+  RRF --> BP["rag.BuildPrompt<br/>numbered [n] context · token-budgeted · history-trimmed"]
+  BP --> LLM["llm.Provider<br/>openai · anthropic · gemini · ollama · mock<br/>retry + backoff"]
+  LLM --> G2
+  subgraph AFTER[After the model]
+    direction TB
+    G2["safety.Guard<br/>banned destructive commands · output redaction"]
+  end
+  G2 --> ANS(["Answer with [n] citations<br/>tokens · cost · latency"])
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class Q entry
+  class G1,G2 safety
+  class EMB,LLM model
+  class VS,RRF data
+  class BP core
+  class ANS out
 ```
-copilot ask "why is payments-api crashlooping?"
-   │
-   ├─ safety.Guard          injection heuristics · secret/PII redaction · size limits
-   ├─ embeddings.Embedder   openai | ollama | cohere | mock  (one interface)
-   ├─ vectorstore.Store     memory (exact, JSON-persisted) | qdrant | chroma
-   │     └─ BM25 + RRF      hybrid retrieval: dense for paraphrase, sparse for "PLAT-1901"
-   ├─ rag.BuildPrompt       numbered [n] context, token-budgeted, history-trimmed
-   ├─ llm.Provider          openai | anthropic | gemini | ollama | mock  (+ retry/backoff)
-   └─ safety.Guard          banned destructive commands · output redaction
 
-copilot agent "…"        ReAct (any model) or native tool calling; tools are read-only by construction
-copilot vision dash.png  structured DashboardReading via JSON schema
-copilot serve            POST /v1/ask · POST /v1/agent · end-user IDs · request IDs · audit log
-copilot eval             hit@k · MRR · answer accuracy · abstention accuracy — gated in CI
-```
+The other commands reuse the same parts:
+
+| Command | What it adds | Module |
+|---|---|---|
+| `copilot agent "…"` | ReAct (any model) or native tool calling; tools are read-only by construction | 06 |
+| `copilot vision dash.png` | structured `DashboardReading` via JSON schema | 07 |
+| `copilot serve` | `POST /v1/ask` · `POST /v1/agent` · end-user IDs · request IDs · audit log | 08 |
+| `copilot eval` | hit@k · MRR · answer accuracy · abstention accuracy — gated in CI | 09 |
 
 Full package contract, request flow and configuration: [ARCHITECTURE.md](ARCHITECTURE.md). `go.mod` has **zero third-party dependencies** — every provider, store and tool is a small `net/http` client you can read in one sitting ([ADR-0009](adr/ADR-0009-raw-http-clients-over-vendor-sdks.md)).
 

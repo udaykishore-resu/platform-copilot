@@ -14,6 +14,57 @@ That shift is where most production incidents with LLM systems come from. The mo
 
 The practical payoff for an SRE team is measurable: a triage question that used to need four terminal windows (`kubectl`, Grafana, the runbook repo, a calculator for error-budget math) becomes one `copilot agent "..."` call that shows its reasoning trace and cites every observation. The agent does not replace the on-call engineer; it removes the first ten minutes of orientation.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  TASK(["copilot agent<br/>'is payments CrashLooping right now?'"])
+  REACT["agent/react.go<br/>Thought · Action · Observation text"]
+  NATIVE["agent/native.go<br/>llm.ToolCall with JSON arguments"]
+  LLM["llm.Provider<br/>picks the next tool, or stops"]
+  REG{"agent.Registry<br/>schema + read-only allowlist"}
+  SD["search_docs<br/>rag retrieval over the index"]
+  KG["kubectl_get<br/>get/describe/logs only, namespace allowlist"]
+  PQ["promql<br/>instant query against Prometheus"]
+  CALC["calc<br/>capacity and cost arithmetic"]
+  DENY["rejected call<br/>verb or namespace not allowed"]
+  OBS["safety.WrapUntrusted<br/>DetectInjection on the result"]
+  STEP{"step < MaxSteps?"}
+  ANS(["final answer<br/>trace + every observation cited"])
+  TASK -->|"task"| REACT
+  TASK -->|"task"| NATIVE
+  REACT -->|"prompt + trace"| LLM
+  NATIVE -->|"messages + tools"| LLM
+  LLM -->|"tool call"| REG
+  LLM -->|"no tool needed"| ANS
+  REG --> SD
+  REG --> KG
+  REG --> PQ
+  REG --> CALC
+  REG -->|"refused"| DENY
+  SD -->|"chunks"| OBS
+  KG -->|"cluster state"| OBS
+  PQ -->|"series"| OBS
+  CALC -->|"number"| OBS
+  DENY -->|"error text"| OBS
+  OBS --> STEP
+  STEP -->|"observation as untrusted data"| LLM
+  STEP -->|"budget exhausted"| ANS
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef model fill:#F3E5F5,stroke:#8E24AA,stroke-width:2px,color:#4A148C
+  classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class TASK entry
+  class REACT,NATIVE,SD,CALC core
+  class LLM model
+  class REG,DENY,OBS,STEP safety
+  class KG,PQ ext
+  class ANS out
+```
+
+*Both protocols enter the same loop, and nothing a tool returns is ever treated as an instruction.*
+
 ## Concept cards
 
 ### Agents Usecases

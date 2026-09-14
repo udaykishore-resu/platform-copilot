@@ -14,6 +14,51 @@ Two things make LLM applications different to test. First, outputs are non-deter
 
 The module closes with the two learning tracks the roadmap points at next. Both are framed through what the capstone exposed as gaps: the evaluation and statistics that an AI & Data Scientist track would sharpen, and the systematic prompt design that the Prompt Engineering track formalises.
 
+```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Roboto, Helvetica, Arial, sans-serif','lineColor':'#607D8B','textColor':'#263238','clusterBkg':'#FAFAFA','clusterBorder':'#B0BEC5','edgeLabelBackground':'#FFFFFF','primaryColor':'#E8EAF6','primaryTextColor':'#1A237E','primaryBorderColor':'#3F51B5','actorBkg':'#E8EAF6','actorBorder':'#3F51B5','actorTextColor':'#1A237E','signalColor':'#455A64','signalTextColor':'#263238','labelBoxBkgColor':'#E8EAF6','labelBoxBorderColor':'#3F51B5','noteBkgColor':'#FFF8E1','noteBorderColor':'#FFB300','noteTextColor':'#FF6F00'}}}%%
+flowchart LR
+  CHG(["prompt · chunking · model change"])
+  CI["ci.yml on every pull request<br/>COPILOT_PROVIDER=mock, no secrets"]
+  LINT["make lint test<br/>loop, parsing, budgets, adapters"]
+  EVAL{"make eval<br/>hit@k ≥ 0.9 · answer_acc ≥ 0.7"}
+  ADV{"make adversarial<br/>injection detection + false positives"}
+  DOCSC{"make docs-check<br/>every roadmap node still has a card"}
+  FAIL["red gate<br/>a number below its threshold"]
+  MERGE(["merge to main"])
+  NIGHT["nightly eval-real<br/>OpenAI, key-gated in ci.yml"]
+  BASE[("golden set<br/>data/eval/golden.jsonl")]
+  DRIFT["drift<br/>the provider changed the model under you"]
+  CHG -->|"pull request"| CI
+  CI --> LINT
+  LINT -->|"green"| EVAL
+  LINT -->|"broken"| FAIL
+  EVAL -->|"metrics hold"| ADV
+  EVAL -->|"below the gate"| FAIL
+  ADV -->|"contained"| DOCSC
+  ADV -->|"a new attack lands"| FAIL
+  DOCSC -->|"coverage complete"| MERGE
+  DOCSC -->|"missing card"| FAIL
+  FAIL -->|"fix and push again"| CHG
+  MERGE --> NIGHT
+  NIGHT -->|"compare"| BASE
+  BASE -->|"regression"| DRIFT
+  DRIFT -->|"next morning's change"| CHG
+  classDef entry fill:#E8EAF6,stroke:#3F51B5,stroke-width:2px,color:#1A237E
+  classDef core fill:#E0F2F1,stroke:#00897B,stroke-width:2px,color:#004D40
+  classDef data fill:#E3F2FD,stroke:#1E88E5,stroke-width:2px,color:#0D47A1
+  classDef safety fill:#FBE9E7,stroke:#FF5722,stroke-width:2px,color:#BF360C
+  classDef ext fill:#ECEFF1,stroke:#607D8B,stroke-width:2px,color:#263238
+  classDef out fill:#E8F5E9,stroke:#43A047,stroke-width:2px,color:#1B5E20
+  class CHG entry
+  class LINT,EVAL,DOCSC core
+  class BASE data
+  class ADV,FAIL,DRIFT safety
+  class CI,NIGHT ext
+  class MERGE out
+```
+
+*Nothing merges on an opinion: every arrow out of a gate is a number, and a red one goes back to the change.*
+
 ## Concept cards
 
 ### AI Code Editors
