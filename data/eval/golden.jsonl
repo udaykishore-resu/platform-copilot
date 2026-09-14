@@ -1,0 +1,11 @@
+# Golden questions for `copilot eval`. One JSON object per line. expect_answer = any of these substrings must appear (case-insensitive).
+{"id":"oom-remediation","question":"What is the remediation when payments-api is OOMKilled?","expect_source":"runbook-payments-api-crashloop","expect_answer":["1.5Gi","v41"]}
+{"id":"oom-trigger","question":"Which ConfigMap version raised LEDGER_BATCH_SIZE and caused the OOMKills?","expect_source":"runbook-payments-api-crashloop","expect_answer":["v42","5000"]}
+{"id":"hpa-cap","question":"Why is the payments-api HPA maxReplicas capped at 14?","expect_source":"k8s-payments-deployment","expect_answer":["600","PLAT-1901","pgbouncer"]}
+{"id":"node-instance","question":"What instance type does the payments-general node group use?","expect_source":"terraform-eks-nodegroup","expect_answer":["m6i.2xlarge"]}
+{"id":"pod-ips","question":"How many usable pod IPs does an m6i.2xlarge node have?","expect_source":"runbook-node-not-ready","expect_answer":["58"]}
+{"id":"sev2-secondary","question":"How long before the secondary on-call is paged for a SEV2?","expect_source":"oncall-escalation-policy","expect_answer":["10 min"]}
+{"id":"redis-root-cause","question":"What caused the duplicate authorizations in the March 2026 Redis incident?","expect_source":"postmortem-2026-03-redis-eviction","expect_answer":["allkeys-lru","evict","idempotency"]}
+{"id":"redis-fix","question":"Where do idempotency keys live now and with which eviction policy?","expect_source":"postmortem-2026-03-redis-eviction","expect_answer":["redis-idempotency","noeviction"]}
+{"id":"redis-impact","question":"How many duplicate authorization attempts were sent during INC-2026-0314?","expect_source":"postmortem-2026-03-redis-eviction","expect_answer":["1,212","1212"]}
+{"id":"unanswerable","question":"What is the on-call rotation for the mobile app team?","unanswerable":true}

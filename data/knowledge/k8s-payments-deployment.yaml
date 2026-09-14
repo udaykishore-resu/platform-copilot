@@ -1,0 +1,150 @@
+# payments-api — production Deployment, Service, HPA and PDB
+# Cluster: prod-us-east-1   Namespace: payments   Owner: Payments Platform
+#
+# This is the manifest as applied on 2026-07-02 (post INC-2026-0314 action item 5).
+# Changes go through the payments-infra repo; `kubectl edit` in prod is forbidden by OPA.
+#
+# Related runbooks: runbook-payments-api-crashloop.md, runbook-node-not-ready.md
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: payments
+  labels:
+    app: payments-api
+    team: payments-platform
+    tier: backend
+  annotations:
+    # Config version is tracked here so `rollout history` shows which ConfigMap
+    # generation a revision ran with. v42 (LEDGER_BATCH_SIZE=5000) caused OOMKills;
+    # v41 (LEDGER_BATCH_SIZE=500) is the current known-good version.
+    payments.internal/config-version: "v41"
+    payments.internal/runbook: "runbook-payments-api-crashloop.md"
+spec:
+  replicas: 6                     # HPA below owns this at runtime (min 6, max 14)
+  revisionHistoryLimit: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 0           # never drop below desired during a rollout; PDB needs 4 ready
+  selector:
+    matchLabels:
+      app: payments-api
+  template:
+    metadata:
+      labels:
+        app: payments-api
+        team: payments-platform
+    spec:
+      serviceAccountName: payments-api          # IRSA role: arn:aws:iam::prod-platform:role/payments-api
+      terminationGracePeriodSeconds: 45         # in-flight PSP calls can take up to 30s
+      nodeSelector:
+        nodegroup: payments-general             # m6i.2xlarge nodes, see terraform-eks-nodegroup.tf
+      containers:
+        - name: payments-api
+          image: registry.internal/payments/payments-api:v2.14.3   # previous known-good: v2.14.2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+            - name: metrics
+              containerPort: 9090
+          envFrom:
+            - configMapRef:
+                name: payments-api-config        # LEDGER_BATCH_SIZE, LOG_LEVEL, PSP_BASE_URL, ...
+            - secretRef:
+                name: payments-api-secrets       # PSP_API_KEY, DB_PASSWORD — synced by External Secrets Operator
+          env:
+            - name: REDIS_IDEMPOTENCY_ADDR
+              value: redis-idempotency.platform.svc.cluster.local:6379   # dedicated since 2026-04-22 (postmortem AI #3)
+            - name: REDIS_CACHE_ADDR
+              value: redis-payments.platform.svc.cluster.local:6379      # shared cache; evictions are acceptable here
+            - name: KAFKA_BROKERS
+              value: kafka-0.kafka.platform.svc.cluster.local:9092,kafka-1.kafka.platform.svc.cluster.local:9092,kafka-2.kafka.platform.svc.cluster.local:9092
+            - name: KAFKA_LEDGER_TOPIC
+              value: payments.ledger.events
+            - name: DB_DSN
+              value: postgres://payments@pgbouncer.payments.svc.cluster.local:6432/payments?sslmode=require
+            - name: DB_POOL_SIZE
+              value: "40"                        # 20 pods x 40 = 800 > RDS ceiling of 600; keep HPA max <= 14 until PLAT-1901
+          resources:
+            requests:
+              cpu: 500m
+              memory: 768Mi
+            limits:
+              # 1Gi is enough for LEDGER_BATCH_SIZE=500. If OOMKilled recurs, the runbook
+              # says raise to 1.5Gi AND roll config back to v41. Never exceed 2Gi without
+              # Platform Infra: nodes run 6-8 payments pods each.
+              memory: 1Gi
+          # Liveness: process is alive and the HTTP server answers. Fails hard only on
+          # internal deadlock or DB unreachable. Restart is the right reaction.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          # Readiness: can this pod take traffic right now? Since postmortem action item 5,
+          # Redis being slow reports "degraded" but still 200 — only DB/PSP unreachable
+          # returns 503. Before that change Redis latency removed healthy pods from the Service.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: payments-api
+  namespace: payments
+spec:
+  type: ClusterIP
+  selector:
+    app: payments-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+# checkout-web calls http://payments-api.payments.svc.cluster.local:8080
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: payments-api
+  namespace: payments
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: payments-api
+  minReplicas: 6
+  maxReplicas: 14                 # was 20; capped at 14 until pgbouncer pool ceiling is raised (PLAT-1901)
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 65
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: payments-api
+  namespace: payments
+spec:
+  minAvailable: 4                 # node drains block below this; scale up before draining
+  selector:
+    matchLabels:
+      app: payments-api

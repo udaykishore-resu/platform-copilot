@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alert Similarity (Transformers.js)</title>
+<!--
+  platform-copilot · Module 02 lab · Transformers.js in the browser
+
+  Embeds a list of alert messages with a small sentence-embedding model that runs
+  entirely in the browser (WebAssembly / WebGPU), then ranks them by cosine
+  similarity to whatever query you type. No server, no API key, no build step:
+  the library is loaded as an ES module from a CDN and the model weights (about
+  23 MB, quantised) are fetched from the Hugging Face Hub once and cached by the
+  browser. After the first load, open the network tab and type a query: nothing
+  leaves the page.
+
+  Why this exists in a platform copilot: an alert storm shows a hundred near-
+  duplicate messages. Grouping them by meaning on the client is instant and free,
+  and only the distinct ones need to be sent to the copilot's /v1/ask endpoint.
+
+  Run:   python -m http.server 8080   (from this directory)   then open http://localhost:8080
+  Opening the file directly via file:// also works in most browsers because the
+  module import is cross-origin to a CDN, but http://localhost avoids edge cases.
+-->
+<style>
+  :root {
+    --bg: #f7f7f5; --fg: #1d1d1b; --muted: #5f6368; --card: #ffffff; --border: #dcdcd7;
+    --accent: #0b5fff; --bar: #cfe0ff; --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #121212; --fg: #e8e8e3; --muted: #9a9a94; --card: #1c1c1c; --border: #333; --accent: #6ea0ff; --bar: #1e3a6e; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--fg);
+         font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; max-width: 960px; margin-inline: auto; }
+  h1 { font-size: 1.4rem; margin: 0 0 4px; }
+  p.lede { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  textarea, input[type=text] { width: 100%; font: inherit; color: inherit; background: transparent;
+         border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+  textarea { min-height: 170px; font-family: var(--mono); font-size: 13px; resize: vertical; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+  .row > div { flex: 1 1 280px; }
+  button { font: inherit; font-weight: 600; color: #fff; background: var(--accent); border: 0; border-radius: 6px;
+           padding: 9px 16px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { font-family: var(--mono); font-size: 13px; color: var(--muted); white-space: pre-wrap; }
+  progress { width: 100%; height: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; }
+  td.score { font-family: var(--mono); white-space: nowrap; width: 1%; }
+  .bar { display: inline-block; height: 10px; background: var(--bar); border-radius: 2px; vertical-align: middle; margin-left: 8px; }
+  .dup { color: var(--accent); font-weight: 600; }
+  footer { color: var(--muted); font-size: 13px; margin-top: 24px; }
+  code { font-family: var(--mono); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>Alert similarity, in the browser</h1>
+<p class="lede">Transformers.js embeds every alert with <code>Xenova/all-MiniLM-L6-v2</code> on your device and ranks them by cosine similarity to your query. No server is involved after the model is cached.</p>
+
+<div class="card">
+  <label for="alerts">Alert messages (one per line)</label>
+  <textarea id="alerts" spellcheck="false">KubePodCrashLooping: payments-api-7d9f4 restarting 4.2 times / 10m, last exit code 137
+Container payments-api OOMKilled in namespace payments, memory limit 512Mi exceeded
+KubePodCrashLooping: payments-api-7d9f4 restarting 4.1 times / 10m, last exit code 137
+ingress-nginx 5xx error ratio above 5% for 10 minutes on api.example.com
+TLS certificate for api.example.com expires in 6 days
+Node ip-10-0-3-17 under disk pressure, ephemeral storage 91% used
+KubeDeploymentReplicasMismatch: checkout has 2/3 ready replicas for 15m
+Test alert from Alertmanager smoke check, please ignore
+Prometheus target down: kube-state-metrics scrape failing for 5m
+High latency p99 > 1.2s on payments-api for 10 minutes</textarea>
+</div>
+
+<div class="card">
+  <div class="row">
+    <div>
+      <label for="query">Query</label>
+      <input id="query" type="text" value="pod keeps dying because it runs out of memory" autocomplete="off">
+    </div>
+    <div style="flex: 0 0 auto;">
+      <button id="run" disabled>Embed and rank</button>
+    </div>
+  </div>
+  <div style="margin-top: 12px;">
+    <progress id="progress" max="100" value="0" hidden></progress>
+    <div id="status">loading Transformers.js from CDN…</div>
+  </div>
+</div>
+
+<div class="card">
+  <table id="results" hidden>
+    <thead><tr><th>#</th><th>Cosine</th><th>Alert</th></tr></thead>
+    <tbody></tbody>
+  </table>
+  <div id="dups" hidden></div>
+</div>
+
+<footer>
+  Model: <code>Xenova/all-MiniLM-L6-v2</code> (384 dimensions, quantised ONNX, about 23 MB, Apache-2.0).
+  Library: <code>@xenova/transformers</code> from jsDelivr. Server-side equivalent in the capstone:
+  <code>internal/embeddings</code> with <code>copilot embed</code>. Vectors from this model are not comparable
+  with vectors from <code>nomic-embed-text</code> or <code>text-embedding-3-small</code>; never mix them in one index.
+</footer>
+
+<script type="module">
+  // ES-module import straight from a CDN; no bundler. Pin the version: an unpinned
+  // import is an unreviewed dependency upgrade on every page load.
+  import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+
+  // Fetch models from the Hugging Face Hub (default) and cache them in the browser
+  // (Cache API). Set env.allowLocalModels = true and env.localModelPath to serve the
+  // ONNX files from your own origin for air-gapped use.
+  env.allowLocalModels = false;
+  env.useBrowserCache = true;
+
+  const MODEL = 'Xenova/all-MiniLM-L6-v2';
+  const DUPLICATE_THRESHOLD = 0.85; // pairs above this are near-duplicates; tune on your own alerts
+
+  const $ = (id) => document.getElementById(id);
+  const status = $('status'), progress = $('progress'), runBtn = $('run');
+  const table = $('results'), tbody = table.querySelector('tbody'), dups = $('dups');
+
+  let extractor = null;            // the feature-extraction pipeline, created once
+  const cache = new Map();         // text -> Float32Array, so re-ranking does not re-embed
+
+  function setStatus(msg) { status.textContent = msg; }
+
+  // Load the model with a progress callback. The first load downloads the weights;
+  // subsequent loads read from the browser cache in well under a second.
+  async function loadModel() {
+    progress.hidden = false;
+    const t0 = performance.now();
+    extractor = await pipeline('feature-extraction', MODEL, {
+      quantized: true,
+      progress_callback: (p) => {
+        if (p.status === 'progress' && typeof p.progress === 'number') {
+          progress.value = p.progress;
+          setStatus(`downloading ${p.file}  ${p.progress.toFixed(0)}%`);
+        } else if (p.status === 'ready') {
+          progress.value = 100;
+        }
+      },
+    });
+    progress.hidden = true;
+    setStatus(`model ready in ${((performance.now() - t0) / 1000).toFixed(2)}s. Type a query and click "Embed and rank".`);
+    runBtn.disabled = false;
+  }
+
+  // Sentence embedding = mean-pool the token embeddings, then L2-normalise so that
+  // cosine similarity is a plain dot product. Same recipe as sentence-transformers.
+  async function embed(texts) {
+    const todo = texts.filter((t) => !cache.has(t));
+    if (todo.length) {
+      const out = await extractor(todo, { pooling: 'mean', normalize: true });
+      // out is a Tensor of shape [n, 384]; slice it into one vector per input.
+      const dims = out.dims[1];
+      for (let i = 0; i < todo.length; i++) {
+        cache.set(todo[i], out.data.slice(i * dims, (i + 1) * dims));
+      }
+    }
+    return texts.map((t) => cache.get(t));
+  }
+
+  // Vectors are normalised, so cosine similarity is the dot product.
+  function dot(a, b) { let s = 0; for (let i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
+
+  async function run() {
+    runBtn.disabled = true;
+    const alerts = $('alerts').value.split('\n').map((s) => s.trim()).filter(Boolean);
+    const query = $('query').value.trim();
+    if (!alerts.length || !query) { setStatus('enter at least one alert and a query.'); runBtn.disabled = false; return; }
+
+    const t0 = performance.now();
+    const [qvec, ...avecs] = await embed([query, ...alerts]);
+    const tEmbed = performance.now() - t0;
+
+    // Rank alerts by similarity to the query.
+    const ranked = alerts
+      .map((text, i) => ({ text, score: dot(qvec, avecs[i]) }))
+      .sort((a, b) => b.score - a.score);
+
+    tbody.innerHTML = '';
+    ranked.forEach((r, idx) => {
+      const tr = document.createElement('tr');
+      const pct = Math.max(0, Math.min(1, r.score));
+      tr.innerHTML = `<td>${idx + 1}</td>` +
+        `<td class="score">${r.score.toFixed(3)}<span class="bar" style="width:${(pct * 120).toFixed(0)}px"></span></td>` +
+        `<td></td>`;
+      tr.lastElementChild.textContent = r.text;
+      tbody.appendChild(tr);
+    });
+    table.hidden = false;
+
+    // Near-duplicate detection: pairwise similarity over the alerts themselves. This is
+    // the client-side dedup step that keeps an alert storm from becoming an LLM bill.
+    const pairs = [];
+    for (let i = 0; i < alerts.length; i++) {
+      for (let j = i + 1; j < alerts.length; j++) {
+        const s = dot(avecs[i], avecs[j]);
+        if (s >= DUPLICATE_THRESHOLD) pairs.push({ i, j, s });
+      }
+    }
+    pairs.sort((a, b) => b.s - a.s);
+    dups.hidden = false;
+    dups.innerHTML = '';
+    const h = document.createElement('p');
+    h.innerHTML = `<span class="dup">${pairs.length}</span> near-duplicate pair(s) at cosine ≥ ${DUPLICATE_THRESHOLD}:`;
+    dups.appendChild(h);
+    if (!pairs.length) {
+      const p = document.createElement('p'); p.textContent = 'none'; dups.appendChild(p);
+    }
+    for (const { i, j, s } of pairs) {
+      const p = document.createElement('p');
+      p.style.fontFamily = 'var(--mono)'; p.style.fontSize = '13px';
+      p.textContent = `${s.toFixed(3)}  [${i + 1}] ${alerts[i]}\n        [${j + 1}] ${alerts[j]}`;
+      p.style.whiteSpace = 'pre-wrap';
+      dups.appendChild(p);
+    }
+
+    setStatus(`embedded ${alerts.length + 1} texts in ${tEmbed.toFixed(0)} ms on this device ` +
+              `(${cache.size} cached). Ranked by cosine similarity; nothing was sent to a server.`);
+    runBtn.disabled = false;
+  }
+
+  runBtn.addEventListener('click', run);
+  $('query').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !runBtn.disabled) run(); });
+
+  loadModel().catch((err) => {
+    progress.hidden = true;
+    setStatus(`failed to load model: ${err?.message || err}\n` +
+              `Check network access to cdn.jsdelivr.net and huggingface.co, or serve the model locally via env.localModelPath.`);
+  });
+</script>
+</body>
+</html>

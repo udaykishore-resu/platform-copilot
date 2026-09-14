@@ -1,0 +1,71 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: build · lint · test · eval · adversarial
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: lint
+        run: make lint
+      - name: test
+        run: make test
+      - name: build
+        run: make build
+      - name: RAG eval (mock provider, gated)
+        run: make eval
+      - name: prompt-injection regression suite
+        run: make adversarial
+      - name: smoke the demo path
+        run: make run
+      - name: upload eval report
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-mock
+          path: eval-mock.json
+
+  course:
+    name: roadmap coverage · python labs compile · docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: every roadmap node has a concept card
+        run: make docs-check
+      - name: labs compile
+        run: python -m py_compile labs/python/*.py
+      - name: docs build
+        run: |
+          pip install mkdocs-material
+          make docs-build
+
+  # Nightly: the same eval against a real model so drift in provider behaviour
+  # is caught. Runs only when the secret is configured.
+  eval-real:
+    name: nightly eval (OpenAI)
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      COPILOT_PROVIDER: openai
+      COPILOT_EMBED_PROVIDER: openai
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: test -n "$OPENAI_API_KEY" && make eval-real || echo "no key configured — skipped"

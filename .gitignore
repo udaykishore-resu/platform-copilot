@@ -1,0 +1,13 @@
+bin/
+.copilot/
+coverage.out
+eval-*.json
+site/
+docs/
+.venv/
+__pycache__/
+*.pyc
+*.mp3
+runbook-qa.jsonl
+.DS_Store
+.env

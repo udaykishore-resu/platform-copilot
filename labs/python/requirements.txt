@@ -1,0 +1,39 @@
+# platform-copilot · Python labs
+#
+# Install into a fresh virtualenv:
+#   python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+#
+# Versions are pinned to compatible-release ranges (lower bound = the API surface the
+# labs were written against, upper bound = next major). For a fully reproducible
+# environment generate a lock file with `pip-compile requirements.txt` and commit it.
+
+# Hosted model SDKs (Module 01)
+openai>=1.60,<2
+anthropic>=0.45,<1
+google-genai>=1.10,<2
+
+# Token counting (Module 01)
+tiktoken>=0.8,<1
+
+# Hugging Face ecosystem (Modules 02, 03, 07)
+huggingface_hub>=0.28,<1
+transformers>=4.48,<5
+torch>=2.5,<3
+sentence-transformers>=3.4,<5
+
+# Local models (Module 02)
+ollama>=0.4,<1
+
+# RAG frameworks (Module 05)
+langchain>=0.3,<2
+langchain-openai>=0.3,<2
+langchain-community>=0.3,<1
+llama-index>=0.12,<1
+
+# Vector stores (Modules 04, 05)
+chromadb>=0.6,<2
+qdrant-client>=1.12,<2
+faiss-cpu>=1.8,<2
+
+# Shared numerics (Modules 03-05)
+numpy>=1.26,<3

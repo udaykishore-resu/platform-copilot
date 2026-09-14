@@ -1,0 +1,22 @@
+# Optional local infrastructure for the "real" variants of the labs.
+#   docker compose up -d qdrant        # then COPILOT_VECTORSTORE=qdrant
+#   docker compose up -d chroma        # then COPILOT_VECTORSTORE=chroma
+#   docker compose up -d ollama && docker exec -it ollama ollama pull llama3.2 nomic-embed-text
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports: ["6333:6333"]
+    volumes: ["qdrant:/qdrant/storage"]
+  chroma:
+    image: chromadb/chroma:latest
+    ports: ["8000:8000"]
+    volumes: ["chroma:/chroma/chroma"]
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+volumes:
+  qdrant: {}
+  chroma: {}
+  ollama: {}

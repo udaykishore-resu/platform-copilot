@@ -1,0 +1,74 @@
+site_name: platform-copilot · AI Engineer roadmap, built
+site_description: The roadmap.sh AI Engineer roadmap implemented as a Go platform/SRE knowledge copilot — one concept card per node, one capstone.
+site_url: https://udaykishore-resu.github.io/platform-copilot/
+repo_url: https://github.com/udaykishore-resu/platform-copilot
+repo_name: udaykishore-resu/platform-copilot
+edit_uri: edit/main/
+
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - search.highlight
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: indigo
+      toggle:
+        icon: material/weather-night
+        name: dark mode
+    - scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: light mode
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Architecture: ARCHITECTURE.md
+  - Course:
+      - Roadmap node map: modules/ROADMAP-NODES.md
+      - "00 · Introduction": modules/00-introduction/README.md
+      - "01 · Pre-trained Models & OpenAI Platform": modules/01-pretrained-models-and-openai-platform/README.md
+      - "02 · Open-Source AI": modules/02-open-source-ai/README.md
+      - "03 · Embeddings": modules/03-embeddings/README.md
+      - "04 · Vector Databases": modules/04-vector-databases/README.md
+      - "05 · RAG & Implementation": modules/05-rag/README.md
+      - "06 · AI Agents": modules/06-ai-agents/README.md
+      - "07 · Multimodal AI": modules/07-multimodal-ai/README.md
+      - "08 · AI Safety & Ethics": modules/08-ai-safety-and-ethics/README.md
+      - "09 · Development Tools": modules/09-development-tools/README.md
+  - Decisions (ADRs):
+      - Index: adr/README.md
+      - "0001 · Provider-agnostic LLM interface": adr/ADR-0001-provider-agnostic-llm-interface.md
+      - "0002 · Go capstone, Python labs": adr/ADR-0002-go-for-the-capstone-python-for-labs.md
+      - "0003 · RAG over fine-tuning": adr/ADR-0003-rag-over-fine-tuning-for-runbook-knowledge.md
+      - "0004 · In-memory first, Qdrant in prod": adr/ADR-0004-in-memory-vector-store-first-qdrant-in-production.md
+      - "0005 · Hybrid retrieval": adr/ADR-0005-hybrid-retrieval-bm25-plus-vectors.md
+      - "0006 · ReAct + native tool calling": adr/ADR-0006-react-text-protocol-plus-native-tool-calling.md
+      - "0007 · Read-only tools & allowlists": adr/ADR-0007-read-only-agent-tools-and-allowlists.md
+      - "0008 · Safety before and after the model": adr/ADR-0008-safety-layer-before-and-after-the-model.md
+      - "0009 · Raw HTTP over vendor SDKs": adr/ADR-0009-raw-http-clients-over-vendor-sdks.md
+      - "0010 · End-user IDs & audit logging": adr/ADR-0010-end-user-ids-and-audit-logging.md
+  - Contributing: CONTRIBUTING.md
